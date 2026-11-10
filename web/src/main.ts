@@ -161,7 +161,21 @@ function select(featureId: number | undefined, faceId?: number) {
   if (!current) return;
   const feature = featureId === undefined ? undefined : current.features[featureId];
   const faces = new Set(feature ? feature.faces : faceId !== undefined ? [faceId] : []);
-  meshes.forEach((m, i) => (m.material as THREE.MeshStandardMaterial).emissive.set(faces.has(i) ? 0x6b4e00 : 0x000000));
+  // Ghost everything else so the selection stands out, even holes hidden inside the Part.
+  meshes.forEach((m, i) => {
+    const ghost = faces.size > 0 && !faces.has(i);
+    const mat = m.material as THREE.MeshStandardMaterial;
+    // Selected Faces turn yellow like the selected rows; tinting the label color could mimic another label.
+    mat.color.set(faces.has(i) ? 0xffc400 : labelColor(current!.faces[i].label));
+    if (mat.transparent !== ghost) mat.needsUpdate = true;
+    mat.transparent = ghost;
+    mat.opacity = ghost ? 0.12 : 1;
+    mat.depthWrite = !ghost;
+    const edges = (m.children[0] as THREE.LineSegments).material as THREE.LineBasicMaterial;
+    edges.transparent = ghost;
+    edges.opacity = ghost ? 0.25 : 1;
+    edges.needsUpdate = true;
+  });
   document.querySelectorAll<HTMLElement>("[data-feature]").forEach((el) =>
     el.classList.toggle("selected", feature !== undefined && el.dataset.feature === String(feature.id)));
   document.querySelector(`#features [data-feature="${feature?.id}"]`)?.scrollIntoView({ block: "nearest" });

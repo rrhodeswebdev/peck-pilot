@@ -100,6 +100,7 @@ These Parts are much more complex than the training set. They are useful as hone
 
 The bundled Parts live in `parts/`; both sources are listed in their `SOURCE.md` files.
 
+- **`parts/demo/mounting_plate.step`:** the clean case, and the Part the app opens first. It's a 100 × 60 × 15 mm plate built in code by `make_plate.py`, with nine top-face holes in standard drill sizes. All nine are planned (18 Operations); the two deep Ø3 holes use G83.
 - **`parts/mfcadpp/`:** three held-out MFCAD++ test Parts. One shows every outcome (planned with G83, `no drill within tolerance`, `needs another Setup`). One is cleanly planned. In the third, the geometry check catches a model mistake before anything is drilled.
 - **`parts/upstream/`:** the six labeled complex Parts from the CADNet repo, which serve as honest failure cases.
 
