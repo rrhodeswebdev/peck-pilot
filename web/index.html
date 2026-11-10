@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Peck Pilot</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Peck Pilot</h1>
+      <label>Part
+        <select id="part-select"></select>
+      </label>
+      <label class="upload">Upload STEP
+        <input id="upload" type="file" accept=".step,.stp" />
+      </label>
+      <span id="status" role="status" aria-live="polite"></span>
+    </header>
+    <main>
+      <section id="viewer" aria-label="3D view of the Part. Click a Face to select its Machining Feature.">
+        <ul id="legend" aria-label="Feature colors"></ul>
+      </section>
+      <aside>
+        <section>
+          <h2>Selection</h2>
+          <p id="selection">Click a Face or a row below.</p>
+        </section>
+        <section>
+          <h2>Machining Features</h2>
+          <ul id="features" class="rows"></ul>
+        </section>
+        <section>
+          <h2>Operations</h2>
+          <div class="scroll">
+            <table id="operations">
+              <thead><tr><th>Tool</th><th>Cycle</th><th>X</th><th>Y</th><th>Z</th><th>Peck</th><th>RPM</th><th>Feed</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+        <section>
+          <h2>G-code <button id="download" type="button" disabled>Download .nc</button></h2>
+          <pre id="gcode"></pre>
+        </section>
+      </aside>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
