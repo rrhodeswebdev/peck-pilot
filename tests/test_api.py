@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from OCC.Core.STEPControl import STEPControl_AsIs, STEPControl_Writer
+from OCP.STEPControl import STEPControl_AsIs, STEPControl_Writer
 from test_features import DEEP, THROUGH, plate
 from test_recognition import PUBLISHED_WEIGHTS
 
@@ -33,7 +33,7 @@ def test_analyzes_a_bundled_part(client):
     assert len(covered) == len(set(covered))
 
 
-@pytest.mark.parametrize("part", ["../README.md", "/etc/passwd", "upstream/../../pytest.ini", None])
+@pytest.mark.parametrize("part", ["../README.md", "/etc/passwd", "upstream/../../pyproject.toml", None])
 def test_rejects_parts_that_are_not_bundled(client, part):
     data = {"part": part} if part else {}
     assert client.post("/api/analyze", data=data).status_code == 404

@@ -1,11 +1,11 @@
 """Build parts/demo/mounting_plate.step: a plate whose holes all use standard drill sizes and open from the top,
-so every hole should be planned. Usage: python parts/demo/make_plate.py"""
+so every hole should be planned. Usage: uv run parts/demo/make_plate.py"""
 from pathlib import Path
 
-from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut
-from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeBox, BRepPrimAPI_MakeCylinder
-from OCC.Core.STEPControl import STEPControl_AsIs, STEPControl_Writer
-from OCC.Core.gp import gp_Ax2, gp_Dir, gp_Pnt
+from OCP.BRepAlgoAPI import BRepAlgoAPI_Cut
+from OCP.BRepPrimAPI import BRepPrimAPI_MakeBox, BRepPrimAPI_MakeCylinder
+from OCP.STEPControl import STEPControl_AsIs, STEPControl_Writer
+from OCP.gp import gp_Ax2, gp_Dir, gp_Pnt
 
 L, W, T = 100, 60, 15  # mm; top face at z = T
 HOLES = [  # (x, y, diameter, depth or None for through)

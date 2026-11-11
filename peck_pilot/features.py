@@ -3,16 +3,16 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
-from OCC.Core.BRep import BRep_Tool
-from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
-from OCC.Core.BRepTools import breptools_UVBounds
-from OCC.Core.GeomAbs import GeomAbs_Cylinder, GeomAbs_Plane
-from OCC.Core.TopAbs import TopAbs_REVERSED
-from OCC.Core.TopTools import TopTools_IndexedMapOfShape
-from OCC.Core.gp import gp_Pnt, gp_Vec
-from OCC.Extend.TopologyUtils import TopologyExplorer
+from OCP.BRep import BRep_Tool
+from OCP.BRepAdaptor import BRepAdaptor_Surface
+from OCP.BRepTools import BRepTools
+from OCP.GeomAbs import GeomAbs_Cylinder, GeomAbs_Plane
+from OCP.TopAbs import TopAbs_REVERSED
+from OCP.TopTools import TopTools_IndexedMapOfShape
+from OCP.gp import gp_Pnt, gp_Vec
 
 from peck_pilot.model import BLIND_HOLE, THROUGH_HOLE
+from peck_pilot.occ import TopologyExplorer
 
 STOCK = 24
 O_RING = 11
@@ -53,7 +53,7 @@ def _is_plane(face):
 
 
 def _vertices(face):
-    return np.array([BRep_Tool.Pnt(v).Coord() for v in TopologyExplorer(face).vertices()])
+    return np.array([BRep_Tool.Pnt_s(v).Coord() for v in TopologyExplorer(face).vertices()])
 
 
 def _axis(cyl):
@@ -71,7 +71,7 @@ def _coaxial(a, b):
 
 def _is_full_internal_cylinder(face, cyl):
     """A whole bore: 360° of cylinder with material outside it. What a hole looks like whatever its label."""
-    umin, umax, vmin, vmax = breptools_UVBounds(face)
+    umin, umax, vmin, vmax = BRepTools.UVBounds_s(face)
     if umax - umin < 2 * math.pi - 1e-6:
         return False
     s = BRepAdaptor_Surface(face, True)

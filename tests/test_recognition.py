@@ -2,15 +2,14 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from OCC.Core.BRep import BRep_Builder
-from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeBox
-from OCC.Core.gp import gp_Pnt
-from OCC.Core.STEPControl import STEPControl_AsIs, STEPControl_Reader, STEPControl_Writer
-from OCC.Core.StepRepr import StepRepr_RepresentationItem
-from OCC.Core.TopoDS import TopoDS_Compound
-from OCC.Extend.TopologyUtils import TopologyExplorer
+from OCP.BRep import BRep_Builder
+from OCP.BRepPrimAPI import BRepPrimAPI_MakeBox
+from OCP.gp import gp_Pnt
+from OCP.STEPControl import STEPControl_AsIs, STEPControl_Reader, STEPControl_Writer
+from OCP.TopoDS import TopoDS_Compound
 
 from peck_pilot.model import PUBLISHED_CHECKPOINT
+from peck_pilot.occ import TopologyExplorer
 from peck_pilot.recognition import InvalidPart, load_model, read_part, recognize
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,7 +25,7 @@ def stored_labels(path):
     transfer = reader.WS().TransferReader()
     solid = next(iter(TopologyExplorer(reader.OneShape()).solids()))
     return np.array([
-        int(StepRepr_RepresentationItem.DownCast(transfer.EntityFromShapeResult(f, 1)).Name().ToCString())
+        int(transfer.EntityFromShapeResult(f, 1).Name().ToCString())  # OCP returns the derived StepRepr type
         for f in TopologyExplorer(solid).faces()
     ])
 

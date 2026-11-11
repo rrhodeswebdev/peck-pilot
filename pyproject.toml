@@ -1,0 +1,28 @@
+[project]
+name = "peck-pilot"
+version = "0.1.0"
+description = "CAD Part to machining strategy to G-code, with Hierarchical CADNet feature recognition"
+readme = "README.md"
+requires-python = "==3.11.*"  # TensorFlow 2.15.1 stops at 3.11
+dependencies = [
+    "cadquery-ocp==7.7.2",  # OpenCascade bindings; the closest pip-installable OCCT to upstream's 7.5.1
+    "tensorflow==2.15.1",  # 2.16+ ships Keras 3, which breaks Hierarchical CADNet
+    "keras==2.15.0",
+    "numpy==1.26.4",
+    "h5py==3.14.0",
+    "fastapi==0.128.8",
+    "uvicorn==0.39.0",
+    "python-multipart==0.0.20",
+]
+
+[dependency-groups]
+dev = ["pytest==8.4.2", "httpx==0.28.1"]
+
+[tool.uv]
+package = false
+# cryptography (via tensorboard -> google-auth) has no Intel-Mac wheel from 49 on, and building it needs Rust.
+constraint-dependencies = ["cryptography<49"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

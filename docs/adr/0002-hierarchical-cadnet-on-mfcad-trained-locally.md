@@ -4,7 +4,7 @@ We use the published Hierarchical CADNet architecture (QUB, MIT license). We cop
 
 ## Consequences
 
-- The environment is pinned to the repo's era: Python 3.9, TensorFlow 2.15 or lower (Keras 3 breaks the code), pythonocc-core 7.5.1 from conda-forge. Don't upgrade these casually.
+- The environment is pinned to the repo's era: Python 3.9, TensorFlow 2.15 or lower (Keras 3 breaks the code), pythonocc-core 7.5.1 from conda-forge. Don't upgrade these casually. (Python and the CAD bindings were later superseded by ADR 0003.)
 - Training uses the checkpoint's configuration (edge variant, 7 layers, 512 units), so our run and the published checkpoint are interchangeable.
 - CPU-only training is time-boxed to one overnight run. Fewer epochs or a training subset are acceptable; evaluation always uses the full MFCAD++ test split. The accuracy we quote is ours, stated next to the paper's 97.6%.
 - MFCAD++ has only two hole types (through hole and blind hole), and no counterbore, countersink or tapped holes.

@@ -1,6 +1,6 @@
 """Fanuc-style metric G-code from a Machining Strategy. Work origin (G54): top front-left corner of the Stock."""
-from OCC.Core.Bnd import Bnd_Box
-from OCC.Core.BRepBndLib import brepbndlib_AddOptimal
+from OCP.Bnd import Bnd_Box
+from OCP.BRepBndLib import BRepBndLib
 
 CLEARANCE = 25.0  # mm above the Stock top: G98 initial plane and tool-change height
 
@@ -8,8 +8,8 @@ CLEARANCE = 25.0  # mm above the Stock top: G98 initial plane and tool-change he
 def stock(solid):
     """Stock is the Part's bounding box. Returns (origin, size): origin is the top front-left corner in Part coordinates."""
     box = Bnd_Box()
-    brepbndlib_AddOptimal(solid, box, False, False)
-    xmin, ymin, zmin, xmax, ymax, zmax = box.Get()
+    BRepBndLib.AddOptimal_s(solid, box, False, False)
+    (xmin, ymin, zmin), (xmax, ymax, zmax) = box.CornerMin().Coord(), box.CornerMax().Coord()
     return (xmin, ymin, zmax), (xmax - xmin, ymax - ymin, zmax - zmin)
 
 

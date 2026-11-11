@@ -2,23 +2,23 @@
 import numpy as np
 from collections import defaultdict
 
-from OCC.Core.BRepMesh import BRepMesh_IncrementalMesh
-from OCC.Core.gp import gp_Pnt
-from OCC.Core.ShapeAnalysis import ShapeAnalysis_Surface
-from OCC.Core.GeomAbs import GeomAbs_Plane, GeomAbs_Cylinder, GeomAbs_Torus, GeomAbs_Cone, GeomAbs_Sphere, \
+from OCP.BRepMesh import BRepMesh_IncrementalMesh
+from OCP.gp import gp_Pnt
+from OCP.ShapeAnalysis import ShapeAnalysis_Surface
+from OCP.GeomAbs import GeomAbs_Plane, GeomAbs_Cylinder, GeomAbs_Torus, GeomAbs_Cone, GeomAbs_Sphere, \
     GeomAbs_BezierSurface, GeomAbs_BSplineSurface, GeomAbs_SurfaceOfRevolution, GeomAbs_SurfaceOfExtrusion, \
     GeomAbs_OffsetSurface, GeomAbs_OtherSurface
-from OCC.Core.GeomLProp import GeomLProp_SLProps
-from OCC.Core.TopAbs import TopAbs_FORWARD, TopAbs_REVERSED
-from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
-from OCC.Core.BRepGProp import brepgprop
-from OCC.Core.GProp import GProp_GProps
-from OCC.Core.TopoDS import topods_Face
-from OCC.Core.gp import gp_Vec
-from OCC.Core._BRepGProp import brepgprop_SurfaceProperties
-from OCC.Core.BRep import BRep_Tool
-from OCC.Core.TopLoc import TopLoc_Location
-from OCC.Extend.TopologyUtils import TopologyExplorer
+from OCP.GeomLProp import GeomLProp_SLProps
+from OCP.TopAbs import TopAbs_FORWARD, TopAbs_REVERSED
+from OCP.BRepAdaptor import BRepAdaptor_Surface
+from OCP.BRepGProp import BRepGProp
+from OCP.GProp import GProp_GProps
+from OCP.TopoDS import TopoDS
+from OCP.gp import gp_Vec
+from OCP.BRep import BRep_Tool
+from OCP.TopLoc import TopLoc_Location
+
+from peck_pilot.occ import HASH_MAX, TopologyExplorer
 
 
 EPSILON = 1e-6
@@ -27,7 +27,7 @@ EPSILON = 1e-6
 class WorkFace:
     def __init__(self, index, face):
         self.index = index
-        self.hash = hash(face)
+        self.hash = face.HashCode(HASH_MAX)
         self.face = face
         self.surface_area = None
         self.centroid = None
@@ -37,7 +37,7 @@ class WorkFace:
 class WorkEdge:
     def __init__(self, index, edge):
         self.index = index
-        self.hash = hash(edge)
+        self.hash = edge.HashCode(HASH_MAX)
         self.edge = edge
         self.faces = []
         self.hash_faces = []
@@ -77,6 +77,11 @@ class WorkFacet:
         self.centroid = [x, y, z]
 
 
+def _index(faces, face):
+    """list.index by OCCT IsEqual, as pythonocc's TopoDS_Shape.__eq__ did; OCP compares Python identity."""
+    return next(i for i, f in enumerate(faces) if f.IsEqual(face))
+
+
 def get_brep_information(shape):
     topo = TopologyExplorer(shape)
     work_faces, faces = get_faces(topo)
@@ -91,7 +96,7 @@ def ask_point_uv2(xyz, face):
     The uv value is not normalised.
     """
     gpPnt = gp_Pnt(float(xyz[0]), float(xyz[1]), float(xyz[2]))
-    surface = BRep_Tool().Surface(face)
+    surface = BRep_Tool.Surface_s(face)
 
     sas = ShapeAnalysis_Surface(surface)
     gpPnt2D = sas.ValueOfUV(gpPnt, 0.01)
@@ -104,8 +109,8 @@ def ask_point_normal_face(uv, face):
     """
     Ask the normal vector of a point given the uv coordinate of the point on a face
     """
-    face_ds = topods_Face(face)
-    surface = BRep_Tool().Surface(face_ds)
+    face_ds = TopoDS.Face_s(face)
+    surface = BRep_Tool.Surface_s(face_ds)
     props = GeomLProp_SLProps(surface, uv[0], uv[1], 1, 1e-6)
 
     gpDir = props.Normal()
@@ -119,7 +124,7 @@ def ask_edge_midpnt_tangent(edge):
     """
     Ask the midpoint of an edge and the tangent at the midpoint
     """
-    result = BRep_Tool.Curve(edge)  # result[0] is the handle of curve;result[1] is the umin; result[2] is umax
+    result = [BRep_Tool.Curve_s(edge, 0.0, 0.0), *BRep_Tool.Range_s(edge)]  # curve, umin, umax
     tmid = (result[1] + result[2]) / 2
     p = gp_Pnt(0, 0, 0)
     v1 = gp_Vec(0, 0, 0)
@@ -179,12 +184,12 @@ def get_edges(topo, occ_faces):
         we.faces = faces
 
         for face in faces:
-            we.hash_faces.append(hash(face))
-            we.face_tags.append(occ_faces.index(face))
+            we.hash_faces.append(face.HashCode(HASH_MAX))
+            we.face_tags.append(_index(occ_faces, face))
 
         if len(faces) == 1:
-            we.hash_faces.append(hash(faces[0]))
-            we.face_tags.append(occ_faces.index(faces[0]))
+            we.hash_faces.append(faces[0].HashCode(HASH_MAX))
+            we.face_tags.append(_index(occ_faces, faces[0]))
 
         work_edges[we.hash] = we
 
@@ -194,7 +199,7 @@ def get_edges(topo, occ_faces):
 def ask_surface_area(f):
     props = GProp_GProps()
 
-    brepgprop_SurfaceProperties(f, props)
+    BRepGProp.SurfaceProperties_s(f, props)
     area = props.Mass()
     return area
 
@@ -234,7 +239,7 @@ def recognise_face_type(face):
 def ask_face_centroid(face):
     """Get centroid of B-Rep face."""
     mass_props = GProp_GProps()
-    brepgprop.SurfaceProperties(face, mass_props)
+    BRepGProp.SurfaceProperties_s(face, mass_props)
     gPt = mass_props.CentreOfMass()
 
     return gPt.Coord()
@@ -258,23 +263,20 @@ def get_faces(topo):
 def triangulation_from_face(face, face_tag, work_facets, work_nodes, facet_face_link):
     """Triangulate a B-Rep face and get information on its facets."""
     aLoc = TopLoc_Location()
-    aTriangulation = BRep_Tool().Triangulation(face, aLoc)
+    aTriangulation = BRep_Tool.Triangulation_s(face, aLoc)
     aTrsf = aLoc.Transformation()
-
-    aNodes = aTriangulation.Nodes()
-    aTriangles = aTriangulation.Triangles()
 
     node_link = {}
 
     for i in range(1, aTriangulation.NbNodes() + 1):
-        node = aNodes.Value(i)
+        node = aTriangulation.Node(i)
         node.Transform(aTrsf)
         node_tag = len(work_nodes)
         work_nodes[node_tag] = np.array([node.X(), node.Y(), node.Z()])
         node_link[i] = node_tag
 
     for i in range(1, aTriangulation.NbTriangles() + 1):
-        node_1, node_2, node_3 = aTriangles.Value(i).Get()
+        node_1, node_2, node_3 = aTriangulation.Triangle(i).Get()
         node_tags = [node_link[node_1], node_link[node_2], node_link[node_3]]
         node_tags.sort()
 

@@ -7,9 +7,9 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.staticfiles import StaticFiles
-from OCC.Core.BRep import BRep_Tool
-from OCC.Core.TopAbs import TopAbs_REVERSED
-from OCC.Core.TopLoc import TopLoc_Location
+from OCP.BRep import BRep_Tool
+from OCP.TopAbs import TopAbs_REVERSED
+from OCP.TopLoc import TopLoc_Location
 
 from peck_pilot import gcode
 from peck_pilot.features import find_features
@@ -38,14 +38,14 @@ def bundled_parts():
 
 def _mesh(face):
     loc = TopLoc_Location()
-    tri = BRep_Tool.Triangulation(face, loc)
+    tri = BRep_Tool.Triangulation_s(face, loc)
     trsf = loc.Transformation()
     vertices = []
     for i in range(1, tri.NbNodes() + 1):
-        vertices += tri.Nodes().Value(i).Transformed(trsf).Coord()
+        vertices += tri.Node(i).Transformed(trsf).Coord()
     indices = []
     for i in range(1, tri.NbTriangles() + 1):
-        a, b, c = tri.Triangles().Value(i).Get()
+        a, b, c = tri.Triangle(i).Get()
         # Reversed Faces need flipped winding so normals point out of the material.
         indices += [a - 1, c - 1, b - 1] if face.Orientation() == TopAbs_REVERSED else [a - 1, b - 1, c - 1]
     return vertices, indices

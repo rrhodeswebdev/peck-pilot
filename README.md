@@ -18,13 +18,14 @@ Anything not planned is listed as an Unplanned Feature with its reason (`needs a
 
 ## Setup
 
-This needs macOS or Linux, [Miniforge](https://github.com/conda-forge/miniforge) and Node 18 or newer. pythonocc-core is only available from conda-forge, which is why the setup uses conda.
+This needs macOS or Linux, [uv](https://docs.astral.sh/uv/) and Node 18 or newer.
 
 ```sh
-conda env create -f environment.yml      # Python 3.9, pythonocc-core 7.5.1, TensorFlow 2.15
-conda activate peck-pilot
+uv sync                                  # Python 3.11, OpenCascade (OCP 7.7.2), TensorFlow 2.15
 (cd web && npm install && npm run build) # builds web/dist, which the API serves
 ```
+
+Prefix the Python commands below with `uv run`, or activate `.venv`. For why this uses OCP rather than pythonocc, see ADR 0003.
 
 ### Weights
 
@@ -41,15 +42,15 @@ Weights are kept out of git. The app loads `runs/night2/best.ckpt` by default; s
 
 ```sh
 G=~/datasets/mfcadpp/MFCAD++_dataset/hierarchical_graphs
-python -m training.train $G runs/night1 2                                # about 5.5 h on a 2019 i9 CPU
-python -m training.train $G runs/night2 2 --init runs/night1/best.ckpt   # about 6.5 h
-python -m training.evaluate runs/night2/best.ckpt $G/test_MFCAD++.h5
+uv run python -m training.train $G runs/night1 2                                # about 5.5 h on a 2019 i9 CPU
+uv run python -m training.train $G runs/night2 2 --init runs/night1/best.ckpt   # about 6.5 h
+uv run python -m training.evaluate runs/night2/best.ckpt $G/test_MFCAD++.h5
 ```
 
 ## Run
 
 ```sh
-uvicorn peck_pilot.api:app --port 8765
+uv run uvicorn peck_pilot.api:app --port 8765
 ```
 
 Open http://127.0.0.1:8765. Pick a bundled Part or upload a STEP file of 20 MB or less. Click a Face, a Machining Feature or an Operation to highlight the related items.
@@ -59,7 +60,7 @@ For frontend development, run `cd web && npm run dev`. Vite proxies `/api` to po
 ## Tests
 
 ```sh
-pytest
+uv run pytest
 ```
 
 The tests cover:
@@ -91,7 +92,7 @@ On the six harder labeled Parts in `parts/upstream/`, per-Face accuracy is:
 | 2 | 0.69 | 0.74 | 0.83 |
 | 3 | 0.88 | 0.85 | 0.92 |
 | 4 | 0.44 | 0.80 | 0.70 |
-| 5 | 0.49 | 0.53 | 0.44 |
+| 5 | 0.49 | 0.52 | 0.47 |
 | 6 | 0.23 | 0.33 | 0.43 |
 
 These Parts are much more complex than the training set. They are useful as honest failure cases in the demo.

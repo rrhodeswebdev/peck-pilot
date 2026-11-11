@@ -3,12 +3,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
-from OCC.Core.IFSelect import IFSelect_RetDone
-from OCC.Core.STEPControl import STEPControl_Reader
-from OCC.Extend.TopologyUtils import TopologyExplorer
+from OCP.IFSelect import IFSelect_RetDone
+from OCP.STEPControl import STEPControl_Reader
 
 from peck_pilot.cadnet import step_graph
 from peck_pilot.model import build_model
+from peck_pilot.occ import TopologyExplorer
 
 DEFAULT_WEIGHTS = Path(__file__).resolve().parents[1] / "runs" / "night2" / "best.ckpt"
 
@@ -33,7 +33,7 @@ def load_model(weights=DEFAULT_WEIGHTS):
 
 def read_part(path):
     reader = STEPControl_Reader()
-    # pythonocc 7.5.1 segfaults the whole process if TransferRoots runs after a failed read.
+    # OpenCascade can segfault the whole process if TransferRoots runs after a failed read (seen with 7.5.1).
     if reader.ReadFile(str(path)) != IFSelect_RetDone:
         raise InvalidPart("not a readable STEP file")
     if reader.TransferRoots() == 0 or reader.OneShape().IsNull():
@@ -48,7 +48,7 @@ def recognize(path, model):
     solid = read_part(path)
     step_graph.triangulate_shape(solid)
     work_faces, work_edges, faces = step_graph.get_brep_information(solid)
-    # Upstream keys Faces by hash(); a collision would silently misalign labels and Faces.
+    # Upstream keys Faces by HashCode; a collision would silently misalign labels and Faces.
     if len(work_faces) != len(faces):
         raise RuntimeError("Face hash collision while building the graph")
     facets, facet_edges, _, _ = step_graph.get_mesh_information(solid)

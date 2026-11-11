@@ -1,16 +1,16 @@
 import numpy as np
 import pytest
-from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut
-from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
-from OCC.Core.BRepGProp import brepgprop_SurfaceProperties
-from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeBox, BRepPrimAPI_MakeCylinder
-from OCC.Core.GProp import GProp_GProps
-from OCC.Core.GeomAbs import GeomAbs_Cylinder
-from OCC.Core.gp import gp_Ax2, gp_Dir, gp_Pnt
-from OCC.Extend.TopologyUtils import TopologyExplorer
+from OCP.BRepAlgoAPI import BRepAlgoAPI_Cut
+from OCP.BRepAdaptor import BRepAdaptor_Surface
+from OCP.BRepGProp import BRepGProp
+from OCP.BRepPrimAPI import BRepPrimAPI_MakeBox, BRepPrimAPI_MakeCylinder
+from OCP.GProp import GProp_GProps
+from OCP.GeomAbs import GeomAbs_Cylinder
+from OCP.gp import gp_Ax2, gp_Dir, gp_Pnt
 
 from peck_pilot.features import STOCK, find_features
 from peck_pilot.model import BLIND_HOLE, THROUGH_HOLE
+from peck_pilot.occ import TopologyExplorer
 from peck_pilot.recognition import Recognition
 
 THROUGH = ((20, 20, -1), (0, 0, 1), 4.0, 22)  # Ø8 through, top face
@@ -35,7 +35,7 @@ def plate(*holes, slot=False):
     for f in faces:
         s = BRepAdaptor_Surface(f, True)
         props = GProp_GProps()
-        brepgprop_SurfaceProperties(f, props)
+        BRepGProp.SurfaceProperties_s(f, props)
         if s.GetType() == GeomAbs_Cylinder:
             labels.append(THROUGH_HOLE if round(s.Cylinder().Radius(), 6) in THROUGH_RADII else BLIND_HOLE)
         else:

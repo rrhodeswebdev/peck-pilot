@@ -2,7 +2,7 @@
 
 A local demo for a forward-deployed engineering role at Re:CAM. It takes a Part, recognizes its Machining Features with a model trained in-house, and turns top-face holes into a Machining Strategy and Fanuc-style G-code. It is shown in a live walkthrough or a recorded video and is never hosted.
 
-Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/0001`, `docs/adr/0002`. Environment: `environment.yml`.
+Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/0001` to `docs/adr/0003`. Environment: `pyproject.toml` (uv).
 
 ## Pipeline
 
@@ -63,7 +63,7 @@ These are fixed constants kept in one module. There is no settings UI.
 
 ## App
 
-- **Backend:** FastAPI on Python 3.9 in the `peck-pilot` conda environment. The model loads once at startup. It is single-user, and synchronous handling is fine.
+- **Backend:** FastAPI on Python 3.11, managed by uv (ADR 0003). The model loads once at startup. It is single-user, and synchronous handling is fine.
   - `GET /api/parts`: the bundled demo Parts.
   - `POST /api/analyze`: a bundled Part name or an uploaded STEP file.
     - Returns per-Face triangles, Face ID, label and confidence.
