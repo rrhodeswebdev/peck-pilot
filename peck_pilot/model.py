@@ -3,6 +3,7 @@ from peck_pilot.cadnet.network_edge import HierarchicalGCNN
 
 NUM_CLASSES = 25  # 24 Machining Feature types + Stock, MFCAD++ label ids
 THROUGH_HOLE, BLIND_HOLE = 1, 12
+O_RING, STOCK = 11, 24
 LABEL_NAMES = [  # MFCAD++ feature_labels.txt, indexed by label id
     "Chamfer", "Through hole", "Triangular passage", "Rectangular passage", "6-sided passage",
     "Triangular through slot", "Rectangular through slot", "Circular through slot", "Rectangular through step",

@@ -3,7 +3,10 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 type Face = { id: number; label: number; confidence: number; vertices: number[]; indices: number[] };
 type Hole = { x: number; y: number; top_z: number; bottom_z: number; diameter: number; through: boolean };
-type Feature = { id: number; label: number; faces: number[]; confidence: number; hole: Hole | null; reason: string | null };
+type Feature = {
+  id: number; label: number; faces: number[]; confidence: number; hole: Hole | null; reason: string | null;
+  status: "planned" | "unplanned" | "no strategy yet";
+};
 type Tool = { number: number; kind: string; diameter: number };
 type Operation = {
   tool: Tool; feature: number; cycle: string; x: number; y: number; r_plane: number; z: number;
@@ -15,7 +18,6 @@ type Analysis = {
 };
 
 const THROUGH_HOLE = 1, BLIND_HOLE = 12, STOCK = 24;
-const UNPLANNED = new Set(["wrong label?", "failed geometry check", "needs another Setup", "no drill within tolerance", "too large to drill"]);
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const partSelect = $<HTMLSelectElement>("part-select");
@@ -120,7 +122,7 @@ function holeText(h: Hole) {
 }
 
 function buildLists(a: Analysis) {
-  const order = (f: Feature) => (f.hole ? 0 : UNPLANNED.has(f.reason ?? "") ? 1 : 2);
+  const order = (f: Feature) => (f.hole ? 0 : f.status === "unplanned" ? 1 : 2);
   featuresEl.replaceChildren(...[...a.features].sort((x, y) => order(x) - order(y)).map((f) => {
     const li = document.createElement("li");
     const b = document.createElement("button");
@@ -129,7 +131,7 @@ function buildLists(a: Analysis) {
     b.innerHTML = `<span class="swatch" style="background:#${labelColor(f.label).getHexString()}"></span>`;
     b.append(`${a.label_names[f.label]}${f.hole ? ` ${holeText(f.hole)}` : ""}`);
     const reason = document.createElement("span");
-    reason.className = `reason${UNPLANNED.has(f.reason ?? "") ? " unplanned" : ""}`;
+    reason.className = `reason${f.status === "unplanned" ? " unplanned" : ""}`;
     reason.textContent = f.reason ?? "planned";
     b.append(reason);
     b.onclick = () => select(f.id);
