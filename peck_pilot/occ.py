@@ -51,9 +51,18 @@ class TopologyExplorer:
         if self._edge_faces is None:
             self._edge_faces = TopTools_IndexedDataMapOfShapeListOfShape()
             TopExp.MapShapesAndAncestors_s(self.shape, TopAbs_EDGE, TopAbs_FACE, self._edge_faces)
-        ids = []
-        for f in self._edge_faces.FindFromKey(edge):
-            i = self._face_map.FindIndex(f) - 1
-            if i not in ids:  # a seam edge lists its Face twice
-                ids.append(i)
+        lst = self._edge_faces.FindFromKey(edge)
+        n = lst.Size()
+        if 1 <= n <= 2:  # iterating the OCP list from Python is slow; First/Last read it directly
+            ids = [self._face_map.FindIndex(lst.First()) - 1]
+            if n == 2:
+                j = self._face_map.FindIndex(lst.Last()) - 1
+                if j != ids[0]:  # a seam edge lists its Face twice
+                    ids.append(j)
+        else:  # no Face, or non-manifold input where more than two Faces share the edge
+            ids = []
+            for f in lst:
+                i = self._face_map.FindIndex(f) - 1
+                if i not in ids:
+                    ids.append(i)
         return [faces[i] for i in ids]
