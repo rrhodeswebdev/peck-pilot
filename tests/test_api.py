@@ -31,6 +31,10 @@ def test_analyzes_a_bundled_part(client):
     assert body["gcode"].startswith("%\nO1000")
     covered = sorted(i for f in body["features"] for i in f["faces"])
     assert len(covered) == len(set(covered))
+    for f in body["features"]:
+        assert f["status"] in ("planned", "unplanned", "no strategy yet")
+        assert (f["status"] == "planned") == (f["reason"] is None)
+        assert (f["status"] == "no strategy yet") == (f["reason"] == "no strategy yet")
 
 
 @pytest.mark.parametrize("part", ["../README.md", "/etc/passwd", "upstream/../../pyproject.toml", None])
@@ -66,6 +70,7 @@ def plate_step_bytes(tmp_path):
 def test_valid_upload_is_planned(client, tmp_path):
     body = client.post("/api/analyze", files={"file": ("plate.step", plate_step_bytes(tmp_path))}).json()
     assert body["name"] == "plate.step"
+    assert body["features"] and all(f["status"] == "planned" for f in body["features"])
     assert body["gcode"].count("M06") == len({op["tool"]["number"] for op in body["operations"]})
 
 

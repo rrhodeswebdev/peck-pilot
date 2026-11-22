@@ -65,7 +65,7 @@ def analyze_file(path, name):
         "name": name,
         "label_names": LABEL_NAMES,
         "faces": faces,
-        "features": [{"id": k, **asdict(f)} for k, f in enumerate(features)],
+        "features": [{"id": k, **asdict(f), "status": f.status} for k, f in enumerate(features)],
         "operations": [{**asdict(op), "tool": asdict(op.tool)} for op in ops],
         "origin": origin,  # G54 in Part coordinates, so the UI can show Operations as the G-code does
         "gcode": gcode.generate(ops, origin, size, Path(name).stem),

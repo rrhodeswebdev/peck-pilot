@@ -11,13 +11,22 @@ from OCP.TopAbs import TopAbs_REVERSED
 from OCP.TopTools import TopTools_IndexedMapOfShape
 from OCP.gp import gp_Pnt, gp_Vec
 
-from peck_pilot.model import BLIND_HOLE, THROUGH_HOLE
+from peck_pilot.model import BLIND_HOLE, O_RING, STOCK, THROUGH_HOLE
 from peck_pilot.occ import TopologyExplorer
 
-STOCK = 24
-O_RING = 11
 HOLE_LABELS = (THROUGH_HOLE, BLIND_HOLE)
 TOL = 1e-3  # mm: coaxial distance, radius match, floor position
+
+# MachiningFeature.reason values: NO_STRATEGY_YET, or an Unplanned Feature reason (README).
+WRONG_LABEL = "wrong label?"
+FAILED_GEOMETRY_CHECK = "failed geometry check"
+NEEDS_ANOTHER_SETUP = "needs another Setup"
+NO_DRILL_WITHIN_TOLERANCE = "no drill within tolerance"
+TOO_LARGE_TO_DRILL = "too large to drill"
+NO_STRATEGY_YET = "no strategy yet"
+# MachiningFeature.status values, besides NO_STRATEGY_YET.
+PLANNED = "planned"
+UNPLANNED = "unplanned"
 
 
 @dataclass
@@ -40,7 +49,14 @@ class MachiningFeature:
     faces: list  # Face indices into Recognition.faces
     confidence: float  # lowest Face confidence in the group
     hole: Hole = None  # set only for a top-face hole ready for a Machining Strategy
-    reason: str = None  # why no Strategy: "no strategy yet" or an Unplanned Feature reason
+    reason: str = None  # why no Strategy: NO_STRATEGY_YET or an Unplanned Feature reason
+
+    @property
+    def status(self):
+        """planned | unplanned | no strategy yet, from reason; read at serialisation time so plan()'s reasons count."""
+        if self.reason is None:
+            return PLANNED
+        return NO_STRATEGY_YET if self.reason == NO_STRATEGY_YET else UNPLANNED
 
 
 def _cylinder(face):
@@ -128,9 +144,9 @@ def _measure(label, loc, d, r, tmin, tmax, low, high):
     elif label == THROUGH_HOLE and not (low or high):
         opens = 0  # through: opens both ways
     else:
-        return None, "failed geometry check"  # blind without one floor, or "through" but capped
+        return None, FAILED_GEOMETRY_CHECK  # blind without one floor, or "through" but capped
     if abs(abs(d[2]) - 1) > 1e-6 or (opens and opens * d[2] < 0):
-        return None, "needs another Setup"
+        return None, NEEDS_ANOTHER_SETUP
     # shortcut: no check for material overhanging the hole opening; MFCAD++ Parts are prismatic.
     ends = sorted([(loc + tmin * d)[2], (loc + tmax * d)[2]])
     return Hole(x=loc[0], y=loc[1], top_z=ends[1], bottom_z=ends[0], diameter=2 * r,
@@ -166,7 +182,7 @@ def find_features(rec):
         low, high = _end_caps(rec, neighbours, cl, loc, d, r, t.min(), t.max())
         ids = cl + sorted(set(low + high) - used)
         if len(cl_labels) > 1:
-            add(min(cl_labels), ids, reason="failed geometry check")
+            add(min(cl_labels), ids, reason=FAILED_GEOMETRY_CHECK)
             continue
         label = cl_labels.pop()
         hole, reason = _measure(label, loc, d, r, t.min(), t.max(), low, high)
@@ -177,7 +193,7 @@ def find_features(rec):
     for i, c in enumerate(cyls):
         if i not in used and c is not None and labels[i] not in HOLE_LABELS + (O_RING, STOCK) \
                 and _is_full_internal_cylinder(rec.faces[i], c):
-            add(labels[i], [i], reason="wrong label?")
+            add(labels[i], [i], reason=WRONG_LABEL)
 
     # Everything else: touching Faces with the same label.
     for start in range(len(rec.faces)):
@@ -191,6 +207,6 @@ def find_features(rec):
             group.add(i)
             stack.extend(n for n in neighbours[i] if labels[n] == labels[start])
         label = labels[start]
-        add(label, group, reason="failed geometry check" if label in HOLE_LABELS else "no strategy yet")
+        add(label, group, reason=FAILED_GEOMETRY_CHECK if label in HOLE_LABELS else NO_STRATEGY_YET)
 
     return features

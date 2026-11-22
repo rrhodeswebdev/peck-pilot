@@ -2,6 +2,8 @@
 import math
 from dataclasses import dataclass
 
+from peck_pilot.features import NO_DRILL_WITHIN_TOLERANCE, TOO_LARGE_TO_DRILL
+
 # 6061 aluminum, HSS drills.
 SURFACE_SPEED = 75.0  # m/min
 FEED_PER_REV = 0.02  # x diameter, mm/rev
@@ -49,10 +51,10 @@ def _speeds(diameter):
 
 def _drill_for(diameter):
     if diameter > DRILL_SIZES[-1] + DRILL_TOLERANCE:
-        return None, "too large to drill"
+        return None, TOO_LARGE_TO_DRILL
     best = min(DRILL_SIZES, key=lambda d: abs(d - diameter))
     if abs(best - diameter) > DRILL_TOLERANCE + 1e-9:
-        return None, "no drill within tolerance"
+        return None, NO_DRILL_WITHIN_TOLERANCE
     return best, None
 
 

@@ -74,3 +74,23 @@ def test_speeds_are_capped_and_feeds_clamped():
     [op] = drills(plan([hole(d=1.0)]))
     assert op.rpm == 10_000  # 75 m/min on Ø1 would be 23,873 rpm
     assert op.feed == pytest.approx(10_000 * 0.05)  # 0.02 x 1 = 0.02 mm/rev, clamped up to 0.05
+
+
+@pytest.mark.parametrize("reason, status", [
+    (None, "planned"),
+    ("no strategy yet", "no strategy yet"),
+    ("wrong label?", "unplanned"),
+    ("failed geometry check", "unplanned"),
+    ("needs another Setup", "unplanned"),
+    ("no drill within tolerance", "unplanned"),
+    ("too large to drill", "unplanned"),
+])
+def test_status_follows_reason(reason, status):
+    assert MachiningFeature(14, [0], 0.9, reason=reason).status == status
+
+
+def test_hole_without_a_drill_is_unplanned_after_planning():
+    f = hole(d=6.25)
+    assert f.status == "planned"
+    plan([f])
+    assert f.hole is not None and f.status == "unplanned"

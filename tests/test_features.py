@@ -8,8 +8,8 @@ from OCP.GProp import GProp_GProps
 from OCP.GeomAbs import GeomAbs_Cylinder
 from OCP.gp import gp_Ax2, gp_Dir, gp_Pnt
 
-from peck_pilot.features import STOCK, find_features
-from peck_pilot.model import BLIND_HOLE, THROUGH_HOLE
+from peck_pilot.features import find_features
+from peck_pilot.model import BLIND_HOLE, STOCK, THROUGH_HOLE
 from peck_pilot.occ import TopologyExplorer
 from peck_pilot.recognition import Recognition
 
