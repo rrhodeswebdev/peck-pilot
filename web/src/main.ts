@@ -59,10 +59,17 @@ new ResizeObserver(() => {
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
 }).observe(viewer);
+// Log the GPU geometry count once per Part load (and on any change), so a person can check that switching Parts frees the old one.
+let shownGeometries = 0;
+let shownPart: Analysis | null = null;
 renderer.setAnimationLoop(() => {
   sun.position.copy(camera.position);
   controls.update();
   renderer.render(scene, camera);
+  const { geometries } = renderer.info.memory;
+  if (geometries !== shownGeometries || current !== shownPart) console.debug(`${current?.name}: ${geometries} geometries on the GPU`);
+  shownGeometries = geometries;
+  shownPart = current;
 });
 
 let current: Analysis | null = null;
@@ -75,6 +82,14 @@ function setStatus(text: string, error = false) {
 }
 
 function buildPart(a: Analysis) {
+  // part.clear() only detaches; free the previous Part's GPU buffers and materials first.
+  for (const m of meshes) {
+    m.geometry.dispose();
+    (m.material as THREE.Material).dispose();
+    const edges = m.children[0] as THREE.LineSegments;
+    edges.geometry.dispose();
+    (edges.material as THREE.Material).dispose();
+  }
   part.clear();
   meshes = a.faces.map((f) => {
     const geometry = new THREE.BufferGeometry();
