@@ -1,8 +1,11 @@
 """Fanuc-style metric G-code from a Machining Strategy. Work origin (G54): top front-left corner of the Stock."""
+import re
+
 from OCP.Bnd import Bnd_Box
 from OCP.BRepBndLib import BRepBndLib
 
 CLEARANCE = 25.0  # mm above the Stock top: G98 initial plane and tool-change height
+_UNSAFE = re.compile(r"[^A-Za-z0-9_-]+")
 
 
 def stock(solid):
@@ -13,9 +16,14 @@ def stock(solid):
     return (xmin, ymin, zmax), (xmax - xmin, ymax - ymin, zmax - zmin)
 
 
+def clean_name(name):
+    """Letters, digits, _ and - only: anything else would let a file name close the (PART ...) comment."""
+    return _UNSAFE.sub("_", name).upper() or "UNNAMED"
+
+
 def generate(ops, origin, size, name="part"):
     ox, oy, oz = origin
-    lines = ["%", "O1000 (PECK PILOT)", f"(PART {name.upper()})",
+    lines = ["%", "O1000 (PECK PILOT)", f"(PART {clean_name(name)})",
              f"(STOCK X{size[0]:.3f} Y{size[1]:.3f} Z{size[2]:.3f}, G54 AT TOP FRONT LEFT)",
              "G21 G17 G40 G49 G80 G90"]
     tool = None
