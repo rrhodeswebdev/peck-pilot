@@ -59,12 +59,30 @@ def test_invalid_step_upload_is_rejected_and_server_survives(client):
     assert client.get("/api/parts").status_code == 200
 
 
-def test_valid_upload_is_planned(client, tmp_path):
+def plate_step_bytes(tmp_path):
     writer = STEPControl_Writer()
     writer.Transfer(plate(THROUGH, DEEP).solid, STEPControl_AsIs)
     path = tmp_path / "plate.step"
     writer.Write(str(path))
-    body = client.post("/api/analyze", files={"file": ("plate.step", path.read_bytes())}).json()
+    return path.read_bytes()
+
+
+def test_valid_upload_is_planned(client, tmp_path):
+    body = client.post("/api/analyze", files={"file": ("plate.step", plate_step_bytes(tmp_path))}).json()
     assert body["name"] == "plate.step"
     assert body["features"] and all(f["status"] == "planned" for f in body["features"])
     assert body["gcode"].count("M06") == len({op["tool"]["number"] for op in body["operations"]})
+
+
+def test_hostile_upload_name_adds_no_command(client, tmp_path):
+    data = plate_step_bytes(tmp_path)
+    plain = client.post("/api/analyze", files={"file": ("plate.step", data)}).json()["gcode"].splitlines()
+    hostile = client.post("/api/analyze", files={"file": ("x) G00 Z-50 (.step", data)}).json()["gcode"].splitlines()
+    assert hostile[2] == "(PART X_G00_Z-50_)"
+    assert hostile[2].count("(") == 1 and hostile[2].count(")") == 1
+    assert hostile[:2] == plain[:2] and hostile[3:] == plain[3:]
+
+
+def test_demo_plate_keeps_its_name(client):
+    body = client.post("/api/analyze", data={"part": "demo/mounting_plate.step"}).json()
+    assert body["gcode"].splitlines()[2] == "(PART MOUNTING_PLATE)"
