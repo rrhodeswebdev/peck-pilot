@@ -1,0 +1,16 @@
+{
+  "name": "peck-pilot",
+  "build": { "dockerfile": "Dockerfile" },
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "containerEnv": {
+    "DEVCONTAINER": "true"
+  },
+  "forwardPorts": [8765, 5173],
+  "mounts": [
+    "source=${localWorkspaceFolderBasename}-venv,target=${containerWorkspaceFolder}/.venv,type=volume",
+    "source=${localWorkspaceFolderBasename}-node_modules,target=${containerWorkspaceFolder}/web/node_modules,type=volume"
+  ],
+  "postCreateCommand": "uv sync --frozen && cd web && npm ci"
+}
